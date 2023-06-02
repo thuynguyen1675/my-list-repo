@@ -1,25 +1,56 @@
 import Head from "next/head";
-import { Octokit } from "octokit";
+import RepoCard from "../components/RepoCard";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import {
+  getReposByOrgService,
+  getReposByUserNameService,
+} from "../services/index";
+import styles from "./styles.module.css";
+import SearchBar from "@/components/SearchBar";
 
 export default function Home() {
-  const key =
-    "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";
-  const api = "https://api.github.com/orgs/ORG/repos";
-  // Octokit.js
-  // https://github.com/octokit/core.js#readme
-  const octokit = new Octokit({
-    auth: "key",
-  });
+  const router = useRouter();
+  const stringSearch = router.query?.search || "";
+  const listKeyword = stringSearch.split(" ");
+  const [data, setData] = useState([]);
+  const [isFetching, setIsFetching] = useState(false);
 
   const loadData = async () => {
-    await octokit.request(`GET /orgs/{org}/repos`, {
-      org: "ORG",
-      headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
+    if (stringSearch) {
+      const reposByOrg = await Promise.all(
+        listKeyword.map((item) => getReposByOrgService(item.toString()))
+      );
+      const reposByUsername = await Promise.all(
+        listKeyword.map((item) => getReposByUserNameService(item.toString()))
+      );
+      let listRepo = [];
+      listRepo = listRepo.concat.apply(listRepo, reposByOrg);
+      listRepo = listRepo.concat.apply(listRepo, reposByUsername);
+      setData(listRepo);
+    } else {
+      setData([]);
+    }
   };
-  console.log(loadData());
+
+  useEffect(() => {
+    loadData();
+  }, [stringSearch]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleScroll = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop !==
+      document.documentElement.offsetHeight
+    )
+      return;
+    setIsFetching(true);
+  };
+  console.log(document.documentElement.scrollTop);
   return (
     <>
       <Head>
@@ -28,7 +59,38 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div>dddd</div>
+      <div>
+        <div className={styles.container}>
+          <SearchBar />
+          {data.length > 0 &&
+            data?.map((item) => {
+              const {
+                stargazers_count = 0,
+                watchers_count = "",
+                full_name = "",
+                description = null,
+                html_url = "",
+                owner = {},
+                language = "",
+                updated_at = "",
+                id = "",
+              } = item || {};
+              const { avatar_url = "", type = "" } = owner || {};
+              const info = {
+                stargazers_count,
+                watchers_count,
+                full_name,
+                description,
+                avatar_url,
+                type,
+                html_url,
+                language,
+                updated_at,
+              };
+              return <RepoCard info={info} key={id} />;
+            })}
+        </div>
+      </div>
     </>
   );
 }

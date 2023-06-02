@@ -1,0 +1,23 @@
+.input {
+  outline: none;
+  border: none;
+  width: 100%;
+  font-size: 16px;
+}
+.form {
+  display: flex;
+  align-items: center;
+  min-width: 0px;
+  border-radius: 6px;
+  border-color: rgb(208, 215, 222);
+  border-width: 1px;
+  border-style: solid;
+  padding: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.search_icon {
+  margin-right: 8px;
+  font-size: 20px;
+}

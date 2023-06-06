@@ -1,0 +1,19 @@
+.select {
+  outline: none;
+  border: none;
+  width: 100%;
+  font-size: 14px;
+}
+.form {
+  display: flex;
+  align-items: center;
+  min-width: 0px;
+  border-radius: 6px;
+  border-color: rgb(208, 215, 222);
+  border-width: 1px;
+  border-style: solid;
+  padding: 8px;
+  width: 30%;
+  max-width: 30%;
+  box-sizing: border-box;
+}

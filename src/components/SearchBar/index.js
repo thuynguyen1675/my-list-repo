@@ -3,13 +3,13 @@ import { useRouter } from "next/router";
 import styles from "./styles.module.css";
 import { useState } from "react";
 
-const SearchBar = () => {
+const SearchBar = ({ setData }) => {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const handleSubmit = (e) => {
     e.preventDefault();
+    setData([]);
     router.push(`/?search=${inputValue}`);
-    console.log(inputValue);
   };
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
@@ -20,7 +20,7 @@ const SearchBar = () => {
         onChange={(e) => {
           setInputValue(e.target.value);
         }}
-      ></input>
+      />
     </form>
   );
 };

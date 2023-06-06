@@ -8,26 +8,41 @@ import {
 } from "../services/index";
 import styles from "./styles.module.css";
 import SearchBar from "@/components/SearchBar";
+import SortInput from "@/components/SortInput";
 
 export default function Home() {
   const router = useRouter();
   const stringSearch = router.query?.search || "";
+  const sort = router.query?.sort || "";
   const listKeyword = stringSearch.split(" ");
   const [data, setData] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
-
+  const [page, setPage] = useState(1);
+  const [finish, setFinish] = useState(false);
   const loadData = async () => {
     if (stringSearch) {
+      // search new keyword
       const reposByOrg = await Promise.all(
-        listKeyword.map((item) => getReposByOrgService(item.toString()))
+        listKeyword.map((item) => getReposByOrgService(item.toString(), page))
       );
       const reposByUsername = await Promise.all(
-        listKeyword.map((item) => getReposByUserNameService(item.toString()))
+        listKeyword.map((item) =>
+          getReposByUserNameService(item.toString(), page)
+        )
       );
+      if (reposByOrg?.length === 0 && reposByUsername?.length === 0) {
+        setFinish(true);
+        return;
+      }
       let listRepo = [];
       listRepo = listRepo.concat.apply(listRepo, reposByOrg);
       listRepo = listRepo.concat.apply(listRepo, reposByUsername);
-      setData(listRepo);
+      // if (sort === "star") {
+      //   listRepo.sort((a, b) => a?.stargazers_count > b?.stargazers_count);
+      // }
+      const newList = data.concat(listRepo);
+      setData(newList);
+      // setIsFetching(false);
     } else {
       setData([]);
     }
@@ -35,22 +50,29 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-  }, [stringSearch]);
+  }, [stringSearch, page]);
 
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleScroll = () => {
+  const handleOnScroll = () => {
     if (
-      window.innerHeight + document.documentElement.scrollTop !==
-      document.documentElement.offsetHeight
-    )
-      return;
-    setIsFetching(true);
+      window.innerHeight +
+        Math.max(
+          window.pageYOffset,
+          document.documentElement.scrollTop,
+          document.body.scrollTop
+        ) >
+      document.documentElement.offsetHeight - 1000
+    ) {
+      setPage(page + 1);
+      // setIsFetching(true);
+    }
   };
-  console.log(document.documentElement.scrollTop);
+  useEffect(() => {
+    window.addEventListener("scroll", handleOnScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleOnScroll);
+    };
+  }, [page]);
+
   return (
     <>
       <Head>
@@ -60,9 +82,10 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>
-        <div className={styles.container}>
-          <SearchBar />
-          {data.length > 0 &&
+        <div className={styles.container} onScroll={handleOnScroll}>
+          <SearchBar setData={setData} />
+          <SortInput />
+          {data.length > 0 ? (
             data?.map((item) => {
               const {
                 stargazers_count = 0,
@@ -88,7 +111,11 @@ export default function Home() {
                 updated_at,
               };
               return <RepoCard info={info} key={id} />;
-            })}
+            })
+          ) : (
+            <div>No resuls</div>
+          )}
+          {finish && <div>All results are loaded</div>}
         </div>
       </div>
     </>
